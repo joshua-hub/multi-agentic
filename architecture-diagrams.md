@@ -264,7 +264,7 @@ graph TD
             Ollama[Ollama Container]
         end
         
-        BindMount["/home/fox/docker-data/ollama/"]
+        BindMount["$HOME/docker-data/ollama/"]
     end
     
     User((User)) <--> |"Browser"| Frontend
