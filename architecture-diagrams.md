@@ -160,8 +160,8 @@ graph TD
     end
     
     subgraph "Middle Container"
-        API_Message[/api/message Endpoint]
-        API_History[/api/history Endpoint]
+        API_Message["/api/message Endpoint"]
+        API_History["/api/history Endpoint"]
         Memory[In-Memory History Array]
         ContextBuilder[Context Builder]
         PromptTemplate[Prompt Template]

@@ -234,4 +234,5 @@ sequenceDiagram
     
     User->>Frontend: Continues conversation
     Note right of User: Conversation continues with roles alternating
-``` 
+```
+```
