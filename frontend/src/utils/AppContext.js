@@ -29,6 +29,11 @@ Previous conversation:
 
 {recipient.name}:`;
 
+// Default chat state
+const DEFAULT_CHAT_STATE = {
+  pendingResponse: null
+};
+
 // Create context
 const AppContext = createContext();
 
@@ -45,6 +50,24 @@ export const AppContextProvider = ({ children, showNotification }) => {
     return savedTemplate || DEFAULT_PROMPT_TEMPLATE;
   });
   
+  // Add chat state with persistence
+  const [chatState, setChatState] = useState(() => {
+    const savedChatState = localStorage.getItem('chatState');
+    const parsedState = savedChatState ? JSON.parse(savedChatState) : DEFAULT_CHAT_STATE;
+    
+    // Only clear pendingResponse if this is a fresh page load (no saved state)
+    // or if the saved state doesn't have a pendingResponse
+    if (!savedChatState || !parsedState.pendingResponse) {
+      return {
+        ...parsedState,
+        pendingResponse: null
+      };
+    }
+    
+    // Otherwise keep the saved state as is
+    return parsedState;
+  });
+  
   const [history, setHistory] = useState([]);
   const [availableModels, setAvailableModels] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -58,6 +81,11 @@ export const AppContextProvider = ({ children, showNotification }) => {
     localStorage.setItem('promptTemplate', promptTemplate);
   }, [promptTemplate]);
   
+  // Save chat state to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('chatState', JSON.stringify(chatState));
+  }, [chatState]);
+  
   // Fetch history on component mount and periodically
   useEffect(() => {
     fetchHistory();
@@ -70,6 +98,14 @@ export const AppContextProvider = ({ children, showNotification }) => {
   useEffect(() => {
     fetchAvailableModels();
   }, []);
+  
+  // Function to update chat state
+  const updateChatState = (updates) => {
+    setChatState(prev => ({
+      ...prev,
+      ...updates
+    }));
+  };
   
   // API functions
   const fetchHistory = async () => {
@@ -165,6 +201,18 @@ export const AppContextProvider = ({ children, showNotification }) => {
     showNotification('Settings reset to defaults', 'info');
   };
   
+  const clearAllData = () => {
+    // Clear all localStorage
+    localStorage.clear();
+    
+    // Reset all state to defaults
+    setPersonaSettings(DEFAULT_PERSONA_SETTINGS);
+    setPromptTemplate(DEFAULT_PROMPT_TEMPLATE);
+    setChatState(DEFAULT_CHAT_STATE);
+    
+    showNotification('All data cleared and reset to defaults', 'info');
+  };
+  
   // Context value
   const contextValue = {
     personaSettings,
@@ -172,11 +220,14 @@ export const AppContextProvider = ({ children, showNotification }) => {
     history,
     availableModels,
     loading,
+    chatState,
+    updateChatState,
     sendMessage,
     updatePromptTemplate,
     importHistory,
     updatePersonaSettings,
     resetToDefaults,
+    clearAllData,
     fetchHistory
   };
   

@@ -18,6 +18,7 @@ import {
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import SaveIcon from '@mui/icons-material/Save';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useAppContext } from '../utils/AppContext';
 
 const SettingsPage = () => {
@@ -27,7 +28,8 @@ const SettingsPage = () => {
     availableModels,
     updatePersonaSettings, 
     updatePromptTemplate, 
-    resetToDefaults 
+    resetToDefaults,
+    clearAllData
   } = useAppContext();
   
   // Local state for editing
@@ -245,6 +247,17 @@ Available variables:
         {/* Action Buttons */}
         <Grid item xs={12}>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 2 }}>
+            <Tooltip title="Warning: This will clear ALL data including chat state, settings, and browser storage. This cannot be undone." arrow>
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={clearAllData}
+              >
+                Clear All Data
+              </Button>
+            </Tooltip>
+
             <Button
               variant="outlined"
               color="warning"
