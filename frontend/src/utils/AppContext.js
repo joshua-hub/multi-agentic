@@ -1,0 +1,197 @@
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+
+// Default persona settings
+const DEFAULT_PERSONA_SETTINGS = {
+  persona1: {
+    name: "Bob",
+    system_prompt: "You are a creative technical AI assistant",
+    model: "dolphin-phi",
+    temperature: 0.7
+  },
+  persona2: {
+    name: "Alice",
+    system_prompt: "You are a technical AI assistant who specialises in critically assessing ideas and concepts",
+    model: "dolphin-phi",
+    temperature: 0.5
+  }
+};
+
+// Default prompt template
+const DEFAULT_PROMPT_TEMPLATE = `System: {recipient.system_prompt}
+
+You are {recipient.name} having a conversation with {sender.name}.
+
+Previous conversation:
+{conversation_history}
+
+{sender.name}: {message.text}
+
+{recipient.name}:`;
+
+// Create context
+const AppContext = createContext();
+
+// Context provider component
+export const AppContextProvider = ({ children, showNotification }) => {
+  // State
+  const [personaSettings, setPersonaSettings] = useState(() => {
+    const savedSettings = localStorage.getItem('personaSettings');
+    return savedSettings ? JSON.parse(savedSettings) : DEFAULT_PERSONA_SETTINGS;
+  });
+  
+  const [promptTemplate, setPromptTemplate] = useState(() => {
+    const savedTemplate = localStorage.getItem('promptTemplate');
+    return savedTemplate || DEFAULT_PROMPT_TEMPLATE;
+  });
+  
+  const [history, setHistory] = useState([]);
+  const [availableModels, setAvailableModels] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  // Save settings to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('personaSettings', JSON.stringify(personaSettings));
+  }, [personaSettings]);
+  
+  useEffect(() => {
+    localStorage.setItem('promptTemplate', promptTemplate);
+  }, [promptTemplate]);
+  
+  // Fetch history on component mount and periodically
+  useEffect(() => {
+    fetchHistory();
+    const interval = setInterval(fetchHistory, 5000); // Poll every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Fetch available models on component mount
+  useEffect(() => {
+    fetchAvailableModels();
+  }, []);
+  
+  // API functions
+  const fetchHistory = async () => {
+    try {
+      const response = await axios.get('/api/history');
+      setHistory(response.data.history);
+    } catch (error) {
+      console.error('Error fetching history:', error);
+    }
+  };
+  
+  const fetchAvailableModels = async () => {
+    try {
+      const response = await axios.get('/api/models');
+      setAvailableModels(response.data.models);
+    } catch (error) {
+      console.error('Error fetching models:', error);
+      showNotification('Failed to fetch available models', 'error');
+    }
+  };
+  
+  const sendMessage = async (sender, recipient, text, raw_text = null) => {
+    setLoading(true);
+    
+    try {
+      const timestamp = new Date().toISOString();
+      
+      const response = await axios.post('/api/message', {
+        timestamp,
+        persona_settings: personaSettings,
+        message: {
+          sender,
+          recipients: recipient,
+          text,
+          raw_text
+        }
+      });
+      
+      setLoading(false);
+      await fetchHistory();
+      
+      return response.data;
+    } catch (error) {
+      setLoading(false);
+      console.error('Error sending message:', error);
+      showNotification('Failed to send message', 'error');
+      throw error;
+    }
+  };
+  
+  const updatePromptTemplate = async (template) => {
+    try {
+      const response = await axios.post('/api/prompt_template', {
+        template
+      });
+      
+      setPromptTemplate(template);
+      showNotification('Prompt template updated successfully', 'success');
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error updating prompt template:', error);
+      showNotification('Failed to update prompt template', 'error');
+      throw error;
+    }
+  };
+  
+  const importHistory = async (historyData) => {
+    try {
+      const response = await axios.post('/api/history', {
+        history: historyData
+      });
+      
+      await fetchHistory();
+      showNotification('History imported successfully', 'success');
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error importing history:', error);
+      showNotification('Failed to import history', 'error');
+      throw error;
+    }
+  };
+  
+  const updatePersonaSettings = (newSettings) => {
+    setPersonaSettings(newSettings);
+    showNotification('Persona settings updated', 'success');
+  };
+  
+  const resetToDefaults = () => {
+    setPersonaSettings(DEFAULT_PERSONA_SETTINGS);
+    setPromptTemplate(DEFAULT_PROMPT_TEMPLATE);
+    showNotification('Settings reset to defaults', 'info');
+  };
+  
+  // Context value
+  const contextValue = {
+    personaSettings,
+    promptTemplate,
+    history,
+    availableModels,
+    loading,
+    sendMessage,
+    updatePromptTemplate,
+    importHistory,
+    updatePersonaSettings,
+    resetToDefaults,
+    fetchHistory
+  };
+  
+  return (
+    <AppContext.Provider value={contextValue}>
+      {children}
+    </AppContext.Provider>
+  );
+};
+
+// Custom hook to use the context
+export const useAppContext = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useAppContext must be used within an AppContextProvider');
+  }
+  return context;
+}; 

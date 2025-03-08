@@ -1,0 +1,45 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - middle
+    networks:
+      - multi-agentic-network
+    restart: unless-stopped
+
+  middle:
+    build:
+      context: .
+      dockerfile: middle/Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - ollama
+    networks:
+      - multi-agentic-network
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - $HOME/docker-data/ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - multi-agentic-network
+    restart: unless-stopped
+
+networks:
+  multi-agentic-network:
+    driver: bridge 

@@ -74,7 +74,7 @@ For detailed API specifications, see [data-schema.md](data-schema.md).
 
 1. Clone this repository
 2. Configure the Docker Compose file if needed
-3. Run `docker compose --build up`
+3. Run `docker compose up --build`
 4. Access the UI at http://localhost:3000
 
 ### Configuration
@@ -85,9 +85,30 @@ The system uses sensible defaults but can be customized:
 - **Prompt Template**: Customize how prompts are constructed
 - **Conversation Context**: By default, includes current message + previous 2 messages
 
-## Project Status
+## Project Structure
 
-This project is a proof of concept and is not intended for production use. It demonstrates the core functionality of a human-in-the-loop multi-agent system without addressing concerns like security, scalability, or persistent storage.
+```
+multi-agentic/
+├── docker-compose.yml        # Docker Compose configuration
+├── frontend/                 # React frontend
+│   ├── Dockerfile            # Frontend container build instructions
+│   ├── package.json          # Node.js dependencies
+│   ├── public/               # Static assets
+│   └── src/                  # React source code
+│       ├── components/       # Reusable UI components
+│       ├── pages/            # Page components
+│       ├── utils/            # Utility functions and context
+│       └── App.js            # Main application component
+├── middle/                   # FastAPI backend
+│   ├── Dockerfile            # Middle container build instructions
+│   ├── requirements.txt      # Python dependencies
+│   └── app/                  # Application code
+│       ├── api/              # API endpoints
+│       ├── models/           # Data models
+│       ├── services/         # Business logic
+│       └── utils/            # Utility functions
+└── pip.conf                  # Custom pip configuration
+```
 
 ## Documentation
 
