@@ -16,6 +16,7 @@ import {
 import DownloadIcon from '@mui/icons-material/Download';
 import UploadIcon from '@mui/icons-material/Upload';
 import CodeIcon from '@mui/icons-material/Code';
+import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { useAppContext } from '../utils/AppContext';
 
@@ -135,6 +136,24 @@ const HistoryPage = () => {
     }
   };
   
+  // Handle clearing history
+  const handleClearHistory = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Import an empty array to clear the history
+      await importHistory([]);
+      await fetchHistory();
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error clearing history:', error);
+      setError('Failed to clear history');
+      setLoading(false);
+    }
+  };
+  
   // Format timestamp
   const formatTimestamp = (timestamp) => {
     try {
@@ -200,6 +219,16 @@ const HistoryPage = () => {
                 Fetch Latest Payload
               </Button>
             </Tooltip>
+
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteIcon />}
+              onClick={handleClearHistory}
+              disabled={loading || history.length === 0}
+            >
+              Clear History
+            </Button>
             
             <input
               type="file"
