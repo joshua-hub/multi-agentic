@@ -18,6 +18,14 @@ Previous conversation:
 # Current prompt template
 current_template = DEFAULT_TEMPLATE
 
+# Store the latest payload
+latest_payload: Dict[str, Any] = {
+    "prompt": None,
+    "model": None,
+    "temperature": None,
+    "timestamp": None
+}
+
 def get_template() -> str:
     """
     Get the current prompt template
@@ -96,6 +104,15 @@ def construct_prompt(
             message_text=message_text,
             conversation_history=conversation_history
         )
+
+        # Store the latest payload
+        global latest_payload
+        latest_payload = {
+            "prompt": prompt,
+            "model": recipient_persona.get('model'),
+            "temperature": recipient_persona.get('temperature'),
+            "timestamp": None  # Will be set when used in message.py
+        }
         
         return prompt
     except KeyError as e:
@@ -104,4 +121,13 @@ def construct_prompt(
         return f"You are {recipient_persona.get('name', 'an AI')}. Respond to: {message_text}"
     except Exception as e:
         logger.error(f"Unexpected error formatting prompt: {str(e)}")
-        return f"You are {recipient_persona.get('name', 'an AI')}. Respond to: {message_text}" 
+        return f"You are {recipient_persona.get('name', 'an AI')}. Respond to: {message_text}"
+
+def get_latest_payload() -> Dict[str, Any]:
+    """
+    Get the latest payload sent to the model
+    
+    Returns:
+        A dictionary containing the latest prompt, model, temperature, and timestamp
+    """
+    return latest_payload 

@@ -62,6 +62,13 @@ class ModelsResponse(BaseModel):
     status: str
     timestamp: str
 
+class LatestPayloadResponse(BaseModel):
+    prompt: Optional[str] = None
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+    timestamp: Optional[str] = None
+    status: str
+
 class OllamaRequest(BaseModel):
     model: str
     prompt: str

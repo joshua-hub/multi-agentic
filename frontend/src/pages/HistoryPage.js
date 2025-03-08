@@ -9,10 +9,14 @@ import {
   ListItemText, 
   Divider,
   CircularProgress,
-  Alert
+  Alert,
+  Tooltip,
+  IconButton
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import UploadIcon from '@mui/icons-material/Upload';
+import CodeIcon from '@mui/icons-material/Code';
+import axios from 'axios';
 import { useAppContext } from '../utils/AppContext';
 
 // Generate a random color based on a string
@@ -30,6 +34,7 @@ const HistoryPage = () => {
   const { history, importHistory, fetchHistory } = useAppContext();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [latestPayload, setLatestPayload] = useState(null);
   const fileInputRef = useRef(null);
   
   // Handle downloading history
@@ -117,6 +122,19 @@ const HistoryPage = () => {
     event.target.value = null;
   };
   
+  // Handle fetching latest payload
+  const handleFetchPayload = async () => {
+    try {
+      const response = await axios.get('/api/latest-payload');
+      if (response.data.prompt) {
+        setLatestPayload(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching payload:', error);
+      setError('Failed to fetch latest payload');
+    }
+  };
+  
   // Format timestamp
   const formatTimestamp = (timestamp) => {
     try {
@@ -125,6 +143,12 @@ const HistoryPage = () => {
     } catch (error) {
       return timestamp;
     }
+  };
+  
+  // Format payload for tooltip
+  const formatPayload = (payload) => {
+    if (!payload) return 'No payload available';
+    return `Model: ${payload.model}\nTemperature: ${payload.temperature}\nTimestamp: ${payload.timestamp}\n\nPrompt:\n${payload.prompt}`;
   };
   
   return (
@@ -151,6 +175,31 @@ const HistoryPage = () => {
             >
               Export History
             </Button>
+
+            <Tooltip 
+              title={formatPayload(latestPayload)}
+              placement="bottom-start"
+              enterDelay={200}
+              leaveDelay={200}
+              sx={{ 
+                maxWidth: 'none',
+                '& .MuiTooltip-tooltip': {
+                  maxWidth: 'none',
+                  whiteSpace: 'pre-wrap',
+                  fontFamily: 'monospace',
+                  fontSize: '0.875rem'
+                }
+              }}
+            >
+              <Button
+                variant="outlined"
+                startIcon={<CodeIcon />}
+                onClick={handleFetchPayload}
+                disabled={loading}
+              >
+                Fetch Latest Payload
+              </Button>
+            </Tooltip>
             
             <input
               type="file"

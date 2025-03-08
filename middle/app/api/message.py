@@ -3,11 +3,36 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import logging
 
-from app.models.schemas import MessageRequest, MessageResponse
+from app.models.schemas import MessageRequest, MessageResponse, LatestPayloadResponse
 from app.services import history_service, prompt_template_service, ollama_service
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+@router.get("/latest-payload", response_model=LatestPayloadResponse)
+async def get_latest_payload():
+    """
+    Get the latest payload sent to the model
+    
+    Returns:
+        The latest payload with prompt, model, temperature, and timestamp
+    """
+    try:
+        logger.info("Getting latest payload")
+        
+        payload = prompt_template_service.get_latest_payload()
+        
+        return LatestPayloadResponse(
+            prompt=payload["prompt"],
+            model=payload["model"],
+            temperature=payload["temperature"],
+            timestamp=payload["timestamp"],
+            status="success"
+        )
+    
+    except Exception as e:
+        logger.error(f"Error getting latest payload: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting latest payload: {str(e)}")
 
 @router.post("/message", response_model=MessageResponse)
 async def process_message(request: MessageRequest):
@@ -54,6 +79,9 @@ async def process_message(request: MessageRequest):
             message_text=request.message.text,
             conversation_context=conversation_context
         )
+        
+        # Update timestamp in latest payload
+        prompt_template_service.latest_payload["timestamp"] = datetime.utcnow().isoformat() + "Z"
         
         # Generate response from Ollama
         raw_response = await ollama_service.generate_response(
