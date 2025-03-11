@@ -167,7 +167,7 @@ const HistoryPage = () => {
   // Format payload for tooltip
   const formatPayload = (payload) => {
     if (!payload) return 'No payload available';
-    return `Model: ${payload.model}\nTemperature: ${payload.temperature}\nTimestamp: ${payload.timestamp}\n\nPrompt:\n${payload.prompt}`;
+    return `Model: ${payload.model}\nTemperature: ${payload.temperature}\nTimestamp: ${formatTimestamp(payload.timestamp)}\n\nPrompt:\n${payload.prompt}`;
   };
   
   return (
@@ -177,65 +177,81 @@ const HistoryPage = () => {
           <Typography variant="h6">Conversation History</Typography>
           
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<UploadIcon />}
-              onClick={handleUploadClick}
-              disabled={loading}
+            <Tooltip
+              title="Import a conversation history from a JSON file. The file must follow the required schema with message_id, timestamp, persona_settings, and message fields for each entry."
+              placement="bottom"
+              arrow
             >
-              Import History
-            </Button>
+              <span>
+                <Button
+                  variant="outlined"
+                  startIcon={<UploadIcon />}
+                  onClick={handleUploadClick}
+                  disabled={loading}
+                >
+                  Import History
+                </Button>
+              </span>
+            </Tooltip>
             
-            <Button
-              variant="outlined"
-              startIcon={<DownloadIcon />}
-              onClick={handleDownloadHistory}
-              disabled={loading || history.length === 0}
+            <Tooltip
+              title="Export the current conversation history to a JSON file. The file will contain all messages with their associated metadata and persona settings."
+              placement="bottom"
+              arrow
             >
-              Export History
-            </Button>
-
-            <Tooltip 
-              title={formatPayload(latestPayload)}
-              placement="bottom-start"
-              enterDelay={200}
-              leaveDelay={200}
-              sx={{ 
-                maxWidth: 'none',
-                '& .MuiTooltip-tooltip': {
-                  maxWidth: 'none',
-                  whiteSpace: 'pre-wrap',
-                  fontFamily: 'monospace',
-                  fontSize: '0.875rem'
-                }
-              }}
-            >
-              <Button
-                variant="outlined"
-                startIcon={<CodeIcon />}
-                onClick={handleFetchPayload}
-                disabled={loading}
-              >
-                Fetch Latest Payload
-              </Button>
+              <span>
+                <Button
+                  variant="outlined"
+                  startIcon={<DownloadIcon />}
+                  onClick={handleDownloadHistory}
+                  disabled={loading || history.length === 0}
+                >
+                  Export History
+                </Button>
+              </span>
             </Tooltip>
 
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              onClick={handleClearHistory}
-              disabled={loading || history.length === 0}
+            <Tooltip
+              title={latestPayload ? formatPayload(latestPayload) : "View the latest prompt sent to the model"}
+              placement="bottom"
+              arrow
             >
-              Clear History
-            </Button>
+              <span>
+                <Button
+                  variant="outlined"
+                  startIcon={<CodeIcon />}
+                  onClick={handleFetchPayload}
+                  disabled={loading}
+                >
+                  View Latest Payload
+                </Button>
+              </span>
+            </Tooltip>
+
+            <Tooltip 
+              title="Clears conversation history and unloads all models from memory. This completely resets the model's state and frees up VRAM."
+              placement="bottom"
+              arrow
+            >
+              <span>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={handleClearHistory}
+                  disabled={loading || history.length === 0}
+                >
+                  Clear History
+                </Button>
+              </span>
+            </Tooltip>
             
             <input
               type="file"
               ref={fileInputRef}
               style={{ display: 'none' }}
-              accept=".json"
               onChange={handleFileChange}
+              accept=".json"
             />
           </Box>
         </Box>

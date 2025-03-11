@@ -63,55 +63,70 @@ async def get_available_models() -> List[Dict[str, str]]:
     try:
         logger.info("Getting available models from Ollama")
         
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient() as client:
             response = await client.get(f"{OLLAMA_API_URL}/tags")
             
-            if response.status_code != 200:
-                logger.error(f"Error from Ollama API: {response.text}")
+            if response.status_code == 200:
+                models = response.json().get("models", [])
+                return models
+            else:
+                logger.error(f"Failed to get models from Ollama: {response.text}")
                 return []
-            
-            response_data = response.json()
-            models = []
-            
-            # Log the raw response for debugging
-            logger.debug(f"Ollama API response: {json.dumps(response_data)}")
-            
-            # Handle different response formats
-            model_list = response_data.get("models", [])
-            if not model_list and "name" in response_data:
-                # Handle case where response is a single model
-                model_list = [response_data]
-            
-            for model in model_list:
-                # Create model info with defaults for missing fields
-                model_info = {
-                    "name": model.get("name", "unknown")
-                }
-                
-                # Add optional fields if they exist
-                if "size" in model:
-                    model_info["size"] = str(model["size"])
-                
-                if "quantization" in model:
-                    model_info["quantization"] = model["quantization"]
-                
-                if "family" in model:
-                    model_info["family"] = model["family"]
-                
-                models.append(model_info)
-            
-            # If no models were found, add a default model
-            if not models:
-                models.append({"name": "dolphin-phi"})
-            
-            return models
-    
-    except httpx.RequestError as e:
-        logger.error(f"Request error when calling Ollama API: {str(e)}")
-        # Return a default model if we can't connect to Ollama
-        return [{"name": "dolphin-phi"}]
-    
     except Exception as e:
-        logger.error(f"Unexpected error when getting models: {str(e)}")
-        # Return a default model on any error
-        return [{"name": "dolphin-phi"}] 
+        logger.error(f"Error getting models from Ollama: {str(e)}")
+        return []
+
+async def get_running_models() -> List[Dict[str, Any]]:
+    """
+    Get a list of models currently loaded in memory
+    
+    Returns:
+        A list of running model information
+    """
+    try:
+        logger.info("Getting running models from Ollama")
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{OLLAMA_API_URL}/ps")
+            
+            if response.status_code == 200:
+                models = response.json().get("models", [])
+                return models
+            else:
+                logger.error(f"Failed to get running models from Ollama: {response.text}")
+                return []
+    except Exception as e:
+        logger.error(f"Error getting running models from Ollama: {str(e)}")
+        return []
+
+async def unload_model(model_name: str) -> bool:
+    """
+    Unload a model from memory
+    
+    Args:
+        model_name: The name of the model to unload
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        logger.info(f"Unloading model {model_name} from memory")
+        
+        payload = {
+            "model": model_name,
+            "prompt": "",
+            "keep_alive": 0
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{OLLAMA_API_URL}/generate", json=payload)
+            
+            if response.status_code == 200:
+                logger.info(f"Successfully unloaded model {model_name}")
+                return True
+            else:
+                logger.error(f"Failed to unload model {model_name}: {response.text}")
+                return False
+    except Exception as e:
+        logger.error(f"Error unloading model {model_name}: {str(e)}")
+        return False 
