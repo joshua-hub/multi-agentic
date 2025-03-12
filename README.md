@@ -12,7 +12,7 @@ The system is designed as a proof of concept and prioritizes functionality and f
 
 - **Human-in-the-Loop Design**: Review and edit AI responses before they're sent
 - **Dual Persona System**: Configure two distinct AI personas with different characteristics
-- **Auto-Response Capability**: Set counters for each persona to automatically send responses without manual intervention
+- **Auto-Response Capability** (Work in Progress): Set counters for each persona to automatically send responses without manual intervention
 - **Customizable Prompts**: Edit the template used to construct prompts for the models
 - **Conversation History**: View, export, and import conversation histories
 - **Material Design UI**: Clean, modern interface with intuitive controls
@@ -26,7 +26,7 @@ The system consists of three main containers:
    - Tabbed interface (Chat, Settings, History)
    - Dual-pane chat interface for both personas
    - Settings for personas and prompt templates
-   - Auto-response counters for semi-automated conversations
+   - Auto-response counters for semi-automated conversations (experimental)
    - Conversation history viewing and export/import
 
 2. **Middle Container**: FastAPI backend that manages:
@@ -46,7 +46,7 @@ The system consists of three main containers:
 2. Message is sent to the middle container with persona settings
 3. Middle container constructs a prompt and sends it to Ollama
 4. Ollama generates a response which is returned to the frontend
-5. User reviews, potentially edits, and approves the response (or auto-response triggers if enabled)
+5. User reviews, potentially edits, and approves the response
 6. Edited response is sent back to the middle container
 7. Process repeats with roles reversed
 
@@ -87,9 +87,15 @@ For detailed API specifications, see [data-schema.md](data-schema.md).
 The system uses sensible defaults but can be customized:
 
 - **Persona Settings**: Configure name, system prompt, model, and temperature
-- **Auto-Response Settings**: Set counters (0-20) for each persona to control automatic responses
+- **Auto-Response Settings** (Experimental): Set counters (0-20) for each persona to control automatic responses
 - **Prompt Template**: Customize how prompts are constructed
 - **Conversation Context**: By default, includes current message + previous 2 messages
+
+## Work in Progress Features
+
+The following features are currently under development and may not function as expected:
+
+- **Auto-Response Feature**: The UI elements for setting auto-response counters are present, but the functionality to automatically send messages is still being refined. Currently, the counter decrements correctly but the auto-response may not trigger reliably. See [autorespond.md](Documents/autorespond.md) for implementation details and current status.
 
 ## Project Structure
 
@@ -122,7 +128,7 @@ multi-agentic/
 - [data-schema.md](data-schema.md): API and data structure documentation
 - [sequence-diagrams.md](sequence-diagrams.md): Message flow sequence diagrams
 - [architecture-diagrams.md](architecture-diagrams.md): System architecture diagrams
-- [autorespond.md](Documents/autorespond.md): Auto-response feature implementation details
+- [autorespond.md](Documents/autorespond.md): Auto-response feature implementation details and current status
 
 ## License
 
