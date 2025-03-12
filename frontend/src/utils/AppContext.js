@@ -7,12 +7,14 @@ const DEFAULT_PERSONA_SETTINGS = {
     name: "Bob",
     system_prompt: "You are a creative technical AI assistant",
     model: "dolphin-phi",
+    provider: "ollama",
     temperature: 0.7
   },
   persona2: {
     name: "Alice",
-    system_prompt: "You are a technical AI assistant who specialises in critically assessing ideas and concepts",
+    system_prompt: "You are a technical AI assistant who critically assesses ideas",
     model: "dolphin-phi",
+    provider: "ollama",
     temperature: 0.5
   }
 };
@@ -40,37 +42,54 @@ const AppContext = createContext();
 // Context provider component
 export const AppContextProvider = ({ children, showNotification }) => {
   // State
-  const [personaSettings, setPersonaSettings] = useState(() => {
-    const savedSettings = localStorage.getItem('personaSettings');
-    return savedSettings ? JSON.parse(savedSettings) : DEFAULT_PERSONA_SETTINGS;
-  });
+  const [personaSettings, setPersonaSettings] = useState(DEFAULT_PERSONA_SETTINGS);
   
-  const [promptTemplate, setPromptTemplate] = useState(() => {
-    const savedTemplate = localStorage.getItem('promptTemplate');
-    return savedTemplate || DEFAULT_PROMPT_TEMPLATE;
-  });
+  const [promptTemplate, setPromptTemplate] = useState(DEFAULT_PROMPT_TEMPLATE);
   
-  // Add chat state with persistence
-  const [chatState, setChatState] = useState(() => {
-    const savedChatState = localStorage.getItem('chatState');
-    const parsedState = savedChatState ? JSON.parse(savedChatState) : DEFAULT_CHAT_STATE;
-    
-    // Only clear pendingResponse if this is a fresh page load (no saved state)
-    // or if the saved state doesn't have a pendingResponse
-    if (!savedChatState || !parsedState.pendingResponse) {
-      return {
-        ...parsedState,
-        pendingResponse: null
-      };
-    }
-    
-    // Otherwise keep the saved state as is
-    return parsedState;
-  });
+  const [chatState, setChatState] = useState(DEFAULT_CHAT_STATE);
   
   const [history, setHistory] = useState([]);
   const [availableModels, setAvailableModels] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // Remove localStorage loading until after component mounts
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('personaSettings');
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        setPersonaSettings(parsed);
+      } catch (e) {
+        console.error('Error parsing saved settings:', e);
+        localStorage.removeItem('personaSettings');
+      }
+    }
+  }, []);
+  
+  useEffect(() => {
+    const savedTemplate = localStorage.getItem('promptTemplate');
+    if (savedTemplate) {
+      try {
+        setPromptTemplate(savedTemplate);
+      } catch (e) {
+        console.error('Error loading saved template:', e);
+        localStorage.removeItem('promptTemplate');
+      }
+    }
+  }, []);
+  
+  useEffect(() => {
+    const savedChatState = localStorage.getItem('chatState');
+    if (savedChatState) {
+      try {
+        const parsed = JSON.parse(savedChatState);
+        setChatState(parsed);
+      } catch (e) {
+        console.error('Error parsing saved chat state:', e);
+        localStorage.removeItem('chatState');
+      }
+    }
+  }, []);
   
   // Save settings to localStorage when they change
   useEffect(() => {
@@ -201,16 +220,24 @@ export const AppContextProvider = ({ children, showNotification }) => {
     showNotification('Settings reset to defaults', 'info');
   };
   
-  const clearAllData = () => {
-    // Clear all localStorage
-    localStorage.clear();
-    
-    // Reset all state to defaults
-    setPersonaSettings(DEFAULT_PERSONA_SETTINGS);
-    setPromptTemplate(DEFAULT_PROMPT_TEMPLATE);
-    setChatState(DEFAULT_CHAT_STATE);
-    
-    showNotification('All data cleared and reset to defaults', 'info');
+  const clearAllData = async () => {
+    try {
+      // Clear all localStorage
+      localStorage.clear();
+      
+      // Reset all state to defaults
+      setPersonaSettings(DEFAULT_PERSONA_SETTINGS);
+      setPromptTemplate(DEFAULT_PROMPT_TEMPLATE);
+      setChatState(DEFAULT_CHAT_STATE);
+      
+      // Clear history on the server
+      await importHistory([]);
+      
+      showNotification('All data cleared and reset to defaults', 'info');
+    } catch (error) {
+      console.error('Error clearing data:', error);
+      showNotification('Error clearing data', 'error');
+    }
   };
   
   // Context value
